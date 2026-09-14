@@ -1,0 +1,108 @@
+# .github/workflows/ci.yml
+#
+# Pipeline de CI (Integração Contínua)
+#
+# O que faz:
+#   - Roda a cada push em qualquer branch
+#   - Executa lint e testes do back-end (FastAPI)
+#   - Executa lint e testes do front-end (Next.js)
+#
+# Depois de validar o código, um pipeline de CD (deploy) será adicionado
+# para fazer o deploy automático quando o código for mergeado na main.
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+
+  # ──────────────────────────────────────────────
+  # Back-end: lint + testes
+  # ──────────────────────────────────────────────
+  api:
+    name: API (FastAPI)
+    runs-on: ubuntu-latest
+
+    services:
+      # Sobe um PostgreSQL temporário só para os testes
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fitcore
+          POSTGRES_PASSWORD: fitcore_test
+          POSTGRES_DB: fitcore_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        working-directory: apps/api
+        run: uv sync --all-extras
+
+      - name: Lint (ruff)
+        working-directory: apps/api
+        run: uv run ruff check .
+
+      - name: Type check (mypy)
+        working-directory: apps/api
+        run: uv run mypy app/
+
+      - name: Run tests
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgresql+asyncpg://fitcore:fitcore_test@localhost:5432/fitcore_test
+          SECRET_KEY: test-secret-key
+          ENVIRONMENT: test
+        run: uv run pytest tests/ -v
+
+  # ──────────────────────────────────────────────
+  # Front-end: lint + build
+  # ──────────────────────────────────────────────
+  web:
+    name: Web (Next.js)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Lint (ESLint)
+        working-directory: apps/web
+        run: npm run lint
+
+      - name: Type check (TypeScript)
+        working-directory: apps/web
+        run: npm run type-check
+
+      - name: Build
+        working-directory: apps/web
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+        run: npm run build

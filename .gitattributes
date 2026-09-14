@@ -1,0 +1,20 @@
+# .gitattributes
+#
+# Normaliza quebras de linha: todos os arquivos usam LF no repositório.
+# No Windows, o Git converte para CRLF ao fazer checkout.
+# Isso evita conflitos de merge causados por diferenças de linha.
+
+* text=auto eol=lf
+
+# Binários — não convertidos
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary

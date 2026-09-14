@@ -1,0 +1,123 @@
+# docker-compose.yml
+#
+# Este arquivo define os serviços que rodam em desenvolvimento local.
+# Para subir tudo de uma vez: docker compose up
+# Para subir só o banco:       docker compose up postgres -d
+#
+# Serviços incluídos:
+#   - postgres  → banco de dados principal (PostgreSQL 16)
+#   - redis     → cache e filas (usado na Fase 2)
+#   - api       → back-end FastAPI (Python)
+#   - web       → front-end Next.js
+#   - metabase  → dashboard analítico (opcional, Fase 2)
+
+services:
+
+  # ──────────────────────────────────────────────
+  # PostgreSQL — banco de dados principal
+  # ──────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: fitcore-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fitcore}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fitcore_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-fitcore}
+    ports:
+      - "5432:5432"      # Exposto para conexão local (DBeaver, pgAdmin etc.)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data   # persiste os dados entre reinicializações
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fitcore}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ──────────────────────────────────────────────
+  # Redis — cache e filas (Fase 2)
+  # ──────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: fitcore-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # ──────────────────────────────────────────────
+  # API — back-end FastAPI
+  # ──────────────────────────────────────────────
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: fitcore-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-fitcore}:${POSTGRES_PASSWORD:-fitcore_dev}@postgres:5432/${POSTGRES_DB:-fitcore}
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-troque-em-producao}
+      ENVIRONMENT: development
+    ports:
+      - "8000:8000"      # API:    http://localhost:8000
+                         # Docs:   http://localhost:8000/docs
+    volumes:
+      - ./apps/api:/app  # hot reload: alterações no código refletem imediatamente
+    depends_on:
+      postgres:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/api
+          target: /app
+
+  # ──────────────────────────────────────────────
+  # Web — front-end Next.js
+  # ──────────────────────────────────────────────
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: fitcore-web
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"      # Front-end: http://localhost:3000
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules  # evita sobrescrever node_modules do container com o do host
+    depends_on:
+      - api
+
+  # ──────────────────────────────────────────────
+  # Metabase — dashboards (Fase 2, opcional)
+  # ──────────────────────────────────────────────
+  metabase:
+    image: metabase/metabase:latest
+    container_name: fitcore-metabase
+    restart: unless-stopped
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: ${POSTGRES_USER:-fitcore}
+      MB_DB_PASS: ${POSTGRES_PASSWORD:-fitcore_dev}
+      MB_DB_HOST: postgres
+    ports:
+      - "3001:3000"      # Metabase: http://localhost:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - analytics        # só sobe com: docker compose --profile analytics up
+
+# ──────────────────────────────────────────────
+# Volumes nomeados — dados persistidos no Docker
+# ──────────────────────────────────────────────
+volumes:
+  postgres_data:
+  redis_data:
