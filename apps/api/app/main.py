@@ -1,17 +1,30 @@
 from fastapi import FastAPI
 
-# Inicializa o aplicativo FastAPI. O FastAPI é a classe principal que usamos para criar nossa API.
-# Os parâmetros title, description e version servem para gerar a documentação automática da API (Swagger).
+from app.routers import students
+
+# Inicializa o aplicativo FastAPI.
+# Os parâmetros abaixo geram a documentação automática em /docs (Swagger) e /redoc.
 app = FastAPI(
     title="FitCore API",
     description="API do sistema de gestão para redes de academias",
     version="0.1.0",
 )
 
-# O "decorador" @app.get("/") diz ao FastAPI que quando alguém acessar a URL raiz (o endereço base da API) 
-# usando o método HTTP GET, esta função deve ser executada.
-@app.get("/")
-def read_root():
-    # Retorna um dicionário Python que o FastAPI converte automaticamente para JSON (o formato padrão das APIs)
-    return {"message": "Bem-vindo à API do FitCore!"}
+# ─── Routers ────────────────────────────────────────────────────────────────
+# Cada módulo tem seu próprio router. Registramos todos aqui com um prefixo
+# de versão (/api/v1) para facilitar futuras migrações sem quebrar clientes.
+app.include_router(students.router, prefix="/api/v1")
 
+
+# ─── Health checks ──────────────────────────────────────────────────────────
+@app.get("/health", tags=["Sistema"])
+def health():
+    """Verifica se o processo está vivo."""
+    return {"status": "ok"}
+
+
+@app.get("/ready", tags=["Sistema"])
+def ready():
+    """Verifica se a aplicação está pronta para receber requisições."""
+    # TODO: adicionar verificação de conexão com o banco
+    return {"status": "ready"}
