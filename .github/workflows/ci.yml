@@ -14,95 +14,109 @@ name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches: ["**"] # Trabalha em todo "push" (envio) para QUALQUER branch
   pull_request:
-    branches: [main]
+    branches: [main] # Também trabalha quando criamos um Pedido de Fusão (PR) para a branch "main"
 
+# "jobs" (tarefas) - Aqui listamos o que o robô tem que fazer
 jobs:
-
   # ──────────────────────────────────────────────
-  # Back-end: lint + testes
+  # TAREFA 1: Back-end (API em Python/FastAPI)
   # ──────────────────────────────────────────────
   api:
-    name: API (FastAPI)
-    runs-on: ubuntu-latest
+    name: API (FastAPI) # Nome descritivo da tarefa
+    runs-on: ubuntu-latest # O sistema operacional que o GitHub vai emprestar pra gente (Linux Ubuntu)
 
+    # "services" - Ferramentas de apoio que a nossa API precisa para ser testada
     services:
-      # Sobe um PostgreSQL temporário só para os testes
+      # Aqui dizemos pro GitHub: "Por favor, suba um banco PostgreSQL rápido só para meus testes"
       postgres:
-        image: postgres:16-alpine
+        image: postgres:16-alpine # Versão do banco (mesma do nosso docker-compose local)
         env:
           POSTGRES_USER: fitcore
           POSTGRES_PASSWORD: fitcore_test
           POSTGRES_DB: fitcore_test
         ports:
-          - 5432:5432
-        options: >-
+          - 5432:5432 # Abre a porta para a nossa API se conectar
+        options: >- # Verifica se o banco já ligou antes de começar os testes
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
+    # "steps" (passos) - A receita de bolo, linha por linha, do que o servidor vai executar
     steps:
       - uses: actions/checkout@v4
+        # "checkout" é a ação de baixar o nosso código lá do repositório para o servidor do GitHub
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
+        # O "uv" é a ferramenta ultra-rápida de instalar pacotes Python que estamos usando
 
       - name: Set up Python
         run: uv python install 3.12
+        # Pede pro "uv" instalar a versão 3.12 do Python na máquina do GitHub
 
       - name: Install dependencies
-        working-directory: apps/api
+        working-directory: apps/api # Entra na pasta da nossa API
         run: uv sync --all-extras
+        # Baixa todas as bibliotecas que nosso código Python precisa pra rodar (ex: FastAPI)
 
       - name: Lint (ruff)
         working-directory: apps/api
         run: uv run ruff check .
+        # "Lint" é uma verificação de estilo. O Ruff lê o código pra ver se está bem formatado e sem erros bobos de sintaxe
 
       - name: Type check (mypy)
         working-directory: apps/api
         run: uv run mypy app/
+        # Mypy verifica se não colocamos um Texto onde deveria ser um Número (checagem de tipos)
 
       - name: Run tests
         working-directory: apps/api
-        env:
+        env: # Variáveis falsas só para o teste rodar
           DATABASE_URL: postgresql+asyncpg://fitcore:fitcore_test@localhost:5432/fitcore_test
           SECRET_KEY: test-secret-key
           ENVIRONMENT: test
         run: uv run pytest tests/ -v
+        # Finalmente, roda o comando de testes (Pytest) para executar os testes que escrevermos
 
   # ──────────────────────────────────────────────
-  # Front-end: lint + build
+  # TAREFA 2: Front-end (Web em Next.js/React)
   # ──────────────────────────────────────────────
   web:
     name: Web (Next.js)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # Também roda em um Linux emprestado
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4 # Baixa o código
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: "20" # Instala a versão 20 do Node.js (necessária para Next.js)
+          cache: "npm" # Guarda os arquivos antigos pra baixar mais rápido da próxima vez
           cache-dependency-path: apps/web/package-lock.json
 
       - name: Install dependencies
         working-directory: apps/web
         run: npm ci
+        # "npm ci" (Clean Install) baixa as bibliotecas de React e Next exatas do projeto
 
       - name: Lint (ESLint)
         working-directory: apps/web
         run: npm run lint
+        # Verifica se o código JavaScript/TypeScript tá no padrão correto
 
       - name: Type check (TypeScript)
         working-directory: apps/web
         run: npm run type-check
+        # Verifica os erros de tipagem no Front-end
 
       - name: Build
         working-directory: apps/web
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8000
         run: npm run build
+        # Tenta "compilar" (construir) o Front-end. Se o Build quebrar aqui, saberemos que
+        # a versão atual quebraria o site de verdade.

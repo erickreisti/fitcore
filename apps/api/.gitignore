@@ -1,0 +1,18 @@
+# Ambientes Virtuais
+.venv/
+venv/
+env/
+
+# Arquivos de Variáveis de Ambiente (MUITO IMPORTANTE PARA SEGURANÇA)
+.env
+.env.*
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Ferramentas
+.pytest_cache/
+.coverage
+htmlcov/

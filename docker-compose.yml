@@ -1,81 +1,98 @@
 # docker-compose.yml
 #
-# Este arquivo define os serviços que rodam em desenvolvimento local.
-# Para subir tudo de uma vez: docker compose up
-# Para subir só o banco:       docker compose up postgres -d
+# O que é o Docker Compose?
+# É um orquestrador. Em vez de rodar um contêiner de cada vez, nós escrevemos
+# essa "receita" e ele sobe todo o nosso ambiente de uma vez só.
 #
-# Serviços incluídos:
-#   - postgres  → banco de dados principal (PostgreSQL 16)
-#   - redis     → cache e filas (usado na Fase 2)
-#   - api       → back-end FastAPI (Python)
-#   - web       → front-end Next.js
-#   - metabase  → dashboard analítico (opcional, Fase 2)
+# Comandos principais no terminal:
+# docker compose up -d       (Sobe tudo em segundo plano)
+# docker compose down        (Desliga e remove tudo)
+# docker compose up postgres (Sobe apenas o banco de dados)
 
 services:
 
   # ──────────────────────────────────────────────
-  # PostgreSQL — banco de dados principal
+  # PostgreSQL — O cofre dos nossos dados
   # ──────────────────────────────────────────────
   postgres:
-    image: postgres:16-alpine
-    container_name: fitcore-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-fitcore}
+    image: postgres:16-alpine # "image": É a receita base. Pega o Postgres versão 16 (num Linux Alpine super leve)
+    container_name: fitcore-postgres # Nome que vai aparecer lá no painel do seu Docker Desktop
+    restart: unless-stopped # Se o Docker reiniciar ou travar, ele liga o banco de novo sozinho
+    
+    environment: # "environment": Variáveis de ambiente (senhas e configurações)
+      # Se a variável POSTGRES_USER não existir no computador, ele usa o padrão "fitcore"
+      POSTGRES_USER: ${POSTGRES_USER:-fitcore} 
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fitcore_dev}
       POSTGRES_DB: ${POSTGRES_DB:-fitcore}
+    
     ports:
-      - "5432:5432"      # Exposto para conexão local (DBeaver, pgAdmin etc.)
+      # "ports": Mapeamento de portas (PORTA_DO_SEU_PC : PORTA_DO_CONTEINER)
+      # Isso permite que a gente conecte ferramentas como o DBeaver ou a nossa API no "localhost:5432"
+      - "5432:5432"      
+    
     volumes:
-      - postgres_data:/var/lib/postgresql/data   # persiste os dados entre reinicializações
+      # "volumes": É a persistência! Contêineres perdem tudo quando desligam.
+      # Aqui dizemos pro Docker: "Salve os dados do banco num disco virtual chamado postgres_data"
+      - postgres_data:/var/lib/postgresql/data   
+    
     healthcheck:
+      # "healthcheck": O Docker fica perguntando "Você tá vivo?" a cada 10 segundos
+      # Isso impede que nossa API tente ligar antes do banco estar 100% pronto
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fitcore}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   # ──────────────────────────────────────────────
-  # Redis — cache e filas (Fase 2)
+  # Redis — A prancheta de Caches e Filas
   # ──────────────────────────────────────────────
   redis:
-    image: redis:7-alpine
+    image: redis:7-alpine # Receita do Redis (na memória RAM)
     container_name: fitcore-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6379:6379" # Porta padrão do Redis
     volumes:
-      - redis_data:/data
+      - redis_data:/data # Caso precise salvar alguma fila que não terminou
 
   # ──────────────────────────────────────────────
-  # API — back-end FastAPI
+  # API — O nosso Back-end em FastAPI (Python)
   # ──────────────────────────────────────────────
   api:
     build:
+      # Diferente do banco (que baixamos pronto), a API nós mesmos criamos.
+      # O "build" diz pro Docker onde está o arquivo Dockerfile com as instruções da API.
       context: ./apps/api
       dockerfile: Dockerfile
     container_name: fitcore-api
     restart: unless-stopped
     environment:
+      # Dizemos pra API conectar no banco de dados "postgres" na porta 5432 usando as senhas que definimos acima.
+      # Note que usamos "@postgres" em vez de "@localhost" porque no mundo do Docker, os nomes viram os IPs.
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-fitcore}:${POSTGRES_PASSWORD:-fitcore_dev}@postgres:5432/${POSTGRES_DB:-fitcore}
       REDIS_URL: redis://redis:6379
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key-troque-em-producao}
       ENVIRONMENT: development
     ports:
-      - "8000:8000"      # API:    http://localhost:8000
-                         # Docs:   http://localhost:8000/docs
+      - "8000:8000" # Expondo a API no localhost:8000 do seu Windows
     volumes:
-      - ./apps/api:/app  # hot reload: alterações no código refletem imediatamente
+      # "volumes" para desenvolvimento (Hot Reload). 
+      # Espelha a pasta do seu Windows para dentro do contêiner. Assim, quando você salva o código no seu editor,
+      # a API atualiza na hora sem precisar desligar o contêiner!
+      - ./apps/api:/app  
     depends_on:
       postgres:
+        # A API só vai ligar depois que o healthcheck do PostgreSQL responder "Estou pronto!"
         condition: service_healthy
     develop:
       watch:
+        # Funcionalidade avançada para manter os arquivos sincronizados em tempo real no Docker Desktop
         - action: sync
           path: ./apps/api
           target: /app
 
   # ──────────────────────────────────────────────
-  # Web — front-end Next.js
+  # Web — O nosso Front-end (Next.js/React)
   # ──────────────────────────────────────────────
   web:
     build:
@@ -84,23 +101,26 @@ services:
     container_name: fitcore-web
     restart: unless-stopped
     environment:
+      # Diz pro Front-end que a API está rodando no endereço abaixo
       NEXT_PUBLIC_API_URL: http://localhost:8000
     ports:
-      - "3000:3000"      # Front-end: http://localhost:3000
+      - "3000:3000" # Expondo o site no localhost:3000
     volumes:
       - ./apps/web:/app
-      - /app/node_modules  # evita sobrescrever node_modules do container com o do host
+      # Esse hack evita que o contêiner esmague a pasta "node_modules" se você também instalou localmente no Windows
+      - /app/node_modules  
     depends_on:
-      - api
+      - api # O front-end só liga depois que a API ligou
 
   # ──────────────────────────────────────────────
-  # Metabase — dashboards (Fase 2, opcional)
+  # Metabase — Painel de Dashboards Analíticos (Fase 2)
   # ──────────────────────────────────────────────
   metabase:
     image: metabase/metabase:latest
     container_name: fitcore-metabase
     restart: unless-stopped
     environment:
+      # Conecta a ferramenta de Dashboard de volta no nosso banco de dados principal
       MB_DB_TYPE: postgres
       MB_DB_DBNAME: metabase
       MB_DB_PORT: 5432
@@ -108,16 +128,19 @@ services:
       MB_DB_PASS: ${POSTGRES_PASSWORD:-fitcore_dev}
       MB_DB_HOST: postgres
     ports:
-      - "3001:3000"      # Metabase: http://localhost:3001
+      - "3001:3000"
     depends_on:
       postgres:
         condition: service_healthy
     profiles:
-      - analytics        # só sobe com: docker compose --profile analytics up
+      # Como o Metabase é pesado, criamos um "Perfil".
+      # Ele NÃO vai ligar no `docker compose up` normal. Só se você mandar explicitamente!
+      - analytics        
 
 # ──────────────────────────────────────────────
-# Volumes nomeados — dados persistidos no Docker
+# Declaração dos Volumes Virtuais (Discos)
 # ──────────────────────────────────────────────
+# Temos que avisar o Docker que esses discos virtuais existem
 volumes:
   postgres_data:
   redis_data:
