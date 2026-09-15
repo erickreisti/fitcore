@@ -62,61 +62,63 @@ jobs:
         run: uv sync --all-extras
         # Baixa todas as bibliotecas que nosso código Python precisa pra rodar (ex: FastAPI)
 
-      - name: Lint (ruff)
-        working-directory: apps/api
-        run: uv run ruff check .
-        # "Lint" é uma verificação de estilo. O Ruff lê o código pra ver se está bem formatado e sem erros bobos de sintaxe
-
-      - name: Type check (mypy)
-        working-directory: apps/api
-        run: uv run mypy app/
-        # Mypy verifica se não colocamos um Texto onde deveria ser um Número (checagem de tipos)
-
-      - name: Run tests
-        working-directory: apps/api
-        env: # Variáveis falsas só para o teste rodar
-          DATABASE_URL: postgresql+asyncpg://fitcore:fitcore_test@localhost:5432/fitcore_test
-          SECRET_KEY: test-secret-key
-          ENVIRONMENT: test
-        run: uv run pytest tests/ -v
-        # Finalmente, roda o comando de testes (Pytest) para executar os testes que escrevermos
+      # TODO: Descomentar essas etapas quando instalarmos as ferramentas de teste
+      # - name: Lint (ruff)
+      #   working-directory: apps/api
+      #   run: uv run ruff check .
+      #   # "Lint" é uma verificação de estilo. O Ruff lê o código pra ver se está bem formatado e sem erros bobos de sintaxe
+      # 
+      # - name: Type check (mypy)
+      #   working-directory: apps/api
+      #   run: uv run mypy app/
+      #   # Mypy verifica se não colocamos um Texto onde deveria ser um Número (checagem de tipos)
+      # 
+      # - name: Run tests
+      #   working-directory: apps/api
+      #   env: # Variáveis falsas só para o teste rodar
+      #     DATABASE_URL: postgresql+asyncpg://fitcore:fitcore_test@localhost:5432/fitcore_test
+      #     SECRET_KEY: test-secret-key
+      #     ENVIRONMENT: test
+      #   run: uv run pytest tests/ -v
+      #   # Finalmente, roda o comando de testes (Pytest) para executar os testes que escrevermos
 
   # ──────────────────────────────────────────────
   # TAREFA 2: Front-end (Web em Next.js/React)
   # ──────────────────────────────────────────────
-  web:
-    name: Web (Next.js)
-    runs-on: ubuntu-latest # Também roda em um Linux emprestado
-
-    steps:
-      - uses: actions/checkout@v4 # Baixa o código
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20" # Instala a versão 20 do Node.js (necessária para Next.js)
-          cache: "npm" # Guarda os arquivos antigos pra baixar mais rápido da próxima vez
-          cache-dependency-path: apps/web/package-lock.json
-
-      - name: Install dependencies
-        working-directory: apps/web
-        run: npm ci
-        # "npm ci" (Clean Install) baixa as bibliotecas de React e Next exatas do projeto
-
-      - name: Lint (ESLint)
-        working-directory: apps/web
-        run: npm run lint
-        # Verifica se o código JavaScript/TypeScript tá no padrão correto
-
-      - name: Type check (TypeScript)
-        working-directory: apps/web
-        run: npm run type-check
-        # Verifica os erros de tipagem no Front-end
-
-      - name: Build
-        working-directory: apps/web
-        env:
-          NEXT_PUBLIC_API_URL: http://localhost:8000
-        run: npm run build
-        # Tenta "compilar" (construir) o Front-end. Se o Build quebrar aqui, saberemos que
-        # a versão atual quebraria o site de verdade.
+  # TODO: Descomentar isso quando criarmos a pasta apps/web
+  # web:
+  #   name: Web (Next.js)
+  #   runs-on: ubuntu-latest # Também roda em um Linux emprestado
+  # 
+  #   steps:
+  #     - uses: actions/checkout@v4 # Baixa o código
+  # 
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: "20" # Instala a versão 20 do Node.js (necessária para Next.js)
+  #         cache: "npm" # Guarda os arquivos antigos pra baixar mais rápido da próxima vez
+  #         cache-dependency-path: apps/web/package-lock.json
+  # 
+  #     - name: Install dependencies
+  #       working-directory: apps/web
+  #       run: npm ci
+  #       # "npm ci" (Clean Install) baixa as bibliotecas de React e Next exatas do projeto
+  # 
+  #     - name: Lint (ESLint)
+  #       working-directory: apps/web
+  #       run: npm run lint
+  #       # Verifica se o código JavaScript/TypeScript tá no padrão correto
+  # 
+  #     - name: Type check (TypeScript)
+  #       working-directory: apps/web
+  #       run: npm run type-check
+  #       # Verifica os erros de tipagem no Front-end
+  # 
+  #     - name: Build
+  #       working-directory: apps/web
+  #       env:
+  #         NEXT_PUBLIC_API_URL: http://localhost:8000
+  #       run: npm run build
+  #       # Tenta "compilar" (construir) o Front-end. Se o Build quebrar aqui, saberemos que
+  #       # a versão atual quebraria o site de verdade.
