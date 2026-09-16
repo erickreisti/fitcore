@@ -1,255 +1,153 @@
 <div align="center">
+  <h1>🏋️‍♂️ FitCore OS</h1>
+  <p><strong>O Sistema Operacional Definitivo para Redes de Academias</strong></p>
 
-# 🏋️‍♂️ FitCore
+  <p>
+    Uma plataforma SaaS multi-tenant focada em alta performance, inteligência de dados (ETL/Analytics) e escalabilidade. Projetada com arquitetura Serverless, integrações orientadas a eventos e modernização tecnológica.
+  </p>
 
-**Plataforma SaaS de gestão para redes de academias**  
-Sistema web operacional · Inteligência de dados · IA Generativa
+  <p>
+    <a href="#-stack-tecnológica">Stack</a> •
+    <a href="#-arquitetura-monorepo">Arquitetura</a> •
+    <a href="#-roadmap-de-engenharia">Roadmap</a> •
+    <a href="#-como-executar-localmente">Setup Local</a>
+  </p>
 
-<br/>
-
-[![Next.js](https://img.shields.io/badge/Next.js%2015-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Python](https://img.shields.io/badge/Python%203.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL%2016-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-
-<br/>
-
-![Status](https://img.shields.io/badge/Status-Em%20Desenvolvimento-22c55e?style=flat-square)
-![Licença](https://img.shields.io/badge/Licença-MIT-blue?style=flat-square)
-![Arquitetura](https://img.shields.io/badge/Arquitetura-Monorepo-8b5cf6?style=flat-square)
-
+  <div>
+    <img src="https://img.shields.io/badge/Status-Em%20Desenvolvimento-22c55e?style=for-the-badge" alt="Status" />
+    <img src="https://img.shields.io/badge/Arquitetura-Monorepo-8b5cf6?style=for-the-badge" alt="Arquitetura" />
+    <img src="https://img.shields.io/badge/Licença-MIT-blue?style=for-the-badge" alt="License" />
+  </div>
 </div>
 
 ---
 
-## 📋 Índice
+## 🎯 Sobre o Projeto
 
-- [Sobre o Projeto](#-sobre-o-projeto)
-- [Stack Tecnológica](#-stack-tecnológica)
-- [Arquitetura do Monorepo](#-arquitetura-do-monorepo)
-- [Como Rodar Localmente](#-como-rodar-localmente)
-- [Variáveis de Ambiente](#-variáveis-de-ambiente)
-- [Roadmap](#-roadmap)
-- [Licença](#-licença)
+O **FitCore OS** foi idealizado para resolver o problema de fragmentação na gestão de franquias e redes de academias. A plataforma unifica controle de acesso, gestão financeira, retenção de clientes e análise de dados em um único ecossistema seguro e escalável.
 
----
+O diferencial técnico da plataforma reside em seu isolamento rigoroso de dados (**Multi-tenancy**), processamento de alta performance e arquitetura moderna de nuvem, adequada para servir clientes B2B.
 
-## 💡 Sobre o Projeto
-
-O **FitCore** é um sistema **multi-tenant** desenvolvido para digitalizar e automatizar completamente a operação de redes de academias. A plataforma cobre desde o cadastro de alunos e matrículas até dashboards analíticos avançados, previsão de churn com ML e assistentes de IA generativa.
-
-O projeto é construído em **três fases de evolução progressiva**:
-
-<br/>
-
-| | Fase | Descrição | Status |
-|:---:|:---|:---|:---:|
-| 🚀 | **Fase 1 — Operacional** | Sistema web core: alunos, planos, matrículas, pagamentos e presença | `Em Dev` |
-| 📊 | **Fase 2 — Dados** | Engenharia de dados: integrações, pipelines ETL e dashboards analíticos | `Planejado` |
-| 🤖 | **Fase 3 — IA & SaaS** | Multi-tenant completo com ML, IA generativa e cobrança recorrente | `Planejado` |
+### 🌟 Principais Inovações Técnicas
+- **Isolamento Multi-tenant Rigoroso:** Controle de acesso com hierarquia de Organizações e Unidades (RBAC) garantindo que dados fiquem 100% isolados por rede de academias.
+- **Autenticação Desacoplada e Segura:** Delegação de identidade para provedor especializado (**Clerk**) com validação criptográfica estrita (JWKS) via middleware nativo no backend.
+- **Arquitetura Orientada a Performance:** Backend assíncrono (*FastAPI + asyncpg*) e infraestrutura serverless que permite escalabilidade horizontal quase infinita sob demanda (Scale-to-zero).
 
 ---
 
 ## 🛠 Stack Tecnológica
 
-<details open>
-<summary><b>💻 Front-end</b> — <code>apps/web</code></summary>
-<br/>
+Optamos por ferramentas estado-da-arte que garantem segurança corporativa, *Developer Experience* (DX) fluida e excelente desempenho.
 
-| Tecnologia | Uso |
-|:---|:---|
-| **Next.js 15** (App Router) | Framework principal com SSR e RSC |
-| **TypeScript** | Tipagem estática em todo o projeto |
-| **Tailwind CSS** | Estilização utilitária |
-| **React Hook Form + Zod** | Formulários e validação de esquemas |
+### 💻 Frontend (Web)
+* **Next.js 15 (App Router):** Renderização híbrida (SSR/RSC) para otimização de requisições e experiência de usuário.
+* **TypeScript & Tailwind CSS:** Tipagem estática em toda a base e sistema de design utilitário.
+* **React Hook Form + Zod:** Tratamento impecável de formulários complexos e validação *schema-based* no lado do cliente.
 
-</details>
+### ⚙️ Backend (API REST)
+* **FastAPI (Python 3.12+):** Framework web assíncrono para construção de APIs ultrarrápidas, provendo OpenAPI nativo.
+* **SQLAlchemy 2.0 (Async) + Alembic:** Mapeamento objeto-relacional robusto e controle preciso de migrações estruturais do banco de dados.
+* **Pydantic:** Validação de *payloads* de entrada e *serialization* rigorosa de dados de saída.
+* **uv:** O gerenciador de pacotes e ambientes virtuais Python de nova geração, escrito em Rust.
 
-<details open>
-<summary><b>⚙️ Back-end</b> — <code>apps/api</code></summary>
-<br/>
-
-| Tecnologia | Uso |
-|:---|:---|
-| **FastAPI** (Python 3.12+) | Framework de API assíncrona de alta performance |
-| **SQLAlchemy** | ORM para modelagem relacional |
-| **Alembic** | Controle de migrações do banco de dados |
-| **Pydantic** | Validação e serialização de dados |
-
-</details>
-
-<details open>
-<summary><b>🗄️ Banco de Dados & Infra</b></summary>
-<br/>
-
-| Tecnologia | Uso |
-|:---|:---|
-| **PostgreSQL 16** | Banco de dados operacional principal |
-| **Redis** | Cache e filas de tarefas (Fase 2) |
-| **Docker + Docker Compose** | Ambiente de desenvolvimento local isolado |
-| **GitHub Actions** | CI/CD automatizado |
-| **Vercel** | Deploy do front-end em produção |
-| **Cloud Run / ECS** | Deploy da API em produção |
-| **Supabase Auth / Clerk** | Autenticação com JWT |
-
-</details>
-
-<details>
-<summary><b>📈 Analytics</b> — Fase 2</summary>
-<br/>
-
-| Tecnologia | Uso |
-|:---|:---|
-| **dbt** | Transformações e modelagem SQL |
-| **Prefect** | Orquestração de pipelines de dados |
-| **Metabase** | Dashboards analíticos embarcados |
-
-</details>
+### 🗄️ Infraestrutura e Dados
+* **Neon DB (PostgreSQL):** Banco de dados relacional *Serverless* com suporte a *branching*, separando totalmente computação de armazenamento.
+* **Clerk:** Provedor de Identidade (IdP) enterprise que tira a complexidade do gerenciamento de JWTs, senhas e sessões do nosso banco de dados.
 
 ---
 
-## 📂 Arquitetura do Monorepo
+## 📂 Arquitetura (Monorepo)
 
-```
+O projeto adota o padrão de monorepo para garantir coesão, facilitar testes de integração e manter versionamento único do produto.
+
+```text
 fitcore/
 ├── apps/
-│   ├── web/                    # 💻 Front-end Next.js
-│   │   ├── app/                #    Páginas (App Router)
-│   │   ├── components/         #    Componentes reutilizáveis
-│   │   ├── lib/                #    Utilitários e clientes HTTP
-│   │   ├── hooks/              #    React Hooks customizados
-│   │   └── package.json
-│   │
+│   ├── web/                    # 💻 Front-end Next.js (Painel B2B)
 │   └── api/                    # ⚙️ Back-end FastAPI
 │       ├── app/
-│       │   ├── main.py         #    Ponto de entrada
-│       │   ├── core/           #    Config, segurança e banco
-│       │   ├── modules/        #    Domínios (alunos, planos etc.)
-│       │   ├── models/         #    Models SQLAlchemy
-│       │   ├── schemas/        #    Schemas Pydantic
-│       │   └── services/       #    Regras de negócio
-│       ├── tests/
-│       ├── pyproject.toml
-│       └── Dockerfile
-│
-├── data/                       # 📊 Engenharia de dados (Fase 2)
-│   ├── flows/                  #    Pipelines Prefect
-│   ├── dbt/                    #    Transformações SQL
-│   └── notebooks/              #    Análises exploratórias
-│
-├── infra/                      # 🏗️ Infraestrutura
-│   ├── docker-compose.yml
-│   └── terraform/              #    IaC para produção (Fase 3)
-│
-├── .github/workflows/          # 🔄 CI/CD GitHub Actions
-├── docker-compose.yml
-└── README.md
+│       │   ├── core/           # Autenticação, middlewares e DB config
+│       │   ├── models/         # Entidades ORM (SQLAlchemy)
+│       │   ├── schemas/        # Contratos Pydantic
+│       │   ├── services/       # Regras de Negócio e Tenancy
+│       │   └── routers/        # Controladores de Requisição REST
+│       ├── alembic/            # Histórico de Migrações do PostgreSQL
+│       └── pyproject.toml      # Configuração central de pacotes (uv)
+└── infra/                      # (Futuro) IaC / Pipelines CI-CD
 ```
 
 ---
 
-## 🚀 Como Rodar Localmente
+## 🗺️ Roadmap de Engenharia
 
-### Pré-requisitos
+O desenvolvimento segue uma abordagem ágil (Épicos):
 
-Certifique-se de ter as seguintes ferramentas instaladas:
+### 🏗️ Fase 1: Core Operacional (🚀 Em Andamento)
+- [x] Configuração da Arquitetura do Monorepo e Dependências (uv).
+- [x] Modelagem estrutural (PostgreSQL via Neon) com foco em isolamento *Multi-tenant*.
+- [x] Integração de Identity Provider (Clerk) e Middleware de validação JWKS.
+- [x] API: Módulos de Hierarquia — `Organizations`, `Units` e permissões de `Users`.
+- [x] API: Módulo de `Students` (Cadastro e listagem multi-tenant segura).
+- [ ] API: Módulos Financeiros — Planos, Matrículas e Histórico de Pagamentos.
+- [ ] API: Módulo de Acessos — Catraca e Registro de Presença.
+- [ ] Web: Setup inicial, design system e proteção de rotas privadas.
+- [ ] Web: Integrações HTTP, dashboards e telas de CRUD completas.
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- [Node.js 20+](https://nodejs.org/)
-- [Python 3.12+](https://www.python.org/)
-- [uv](https://docs.astral.sh/uv/) — Gerenciador de pacotes Python (recomendado)
+### 📊 Fase 2: Inteligência de Dados (Planejado)
+- [ ] Implementação de pipelines ETL para alimentar relatórios.
+- [ ] Integração com sistema de BI embutido.
 
-### 1️⃣ Clone e configure
+### 🤖 Fase 3: IA Generativa e SaaS Global (Planejado)
+- [ ] Assinaturas integradas via Stripe (Plataformização).
+- [ ] Modelos de *Machine Learning* focados na previsão de Churn (abandono de alunos).
+- [ ] Assistente IA generativo integrado à interface web.
 
+---
+
+## 🚀 Como Executar Localmente
+
+### Pré-requisitos Globais
+- **Node.js 20+**
+- **Python 3.12+**
+- **[uv](https://docs.astral.sh/uv/)** (Substituto ultra-rápido para pip e venv)
+
+### 1. Clonar o Repositório
 ```bash
-git clone https://github.com/seu-usuario/fitcore.git
+git clone https://github.com/erickreisti/fitcore.git
 cd fitcore
 ```
 
-### 2️⃣ Suba o banco de dados
-
-```bash
-docker compose up postgres -d
-```
-
-### 3️⃣ Rode a API
-
+### 2. Configurar a API Backend
+Abra seu terminal e acesse a raiz da API:
 ```bash
 cd apps/api
-uv sync
-uv run alembic upgrade head      # Aplica as migrações
-uv run uvicorn app.main:app --reload
 ```
 
-> ✅ API disponível em: `http://localhost:8000`
-> 📚 Documentação interativa: `http://localhost:8000/docs`
+Crie as variáveis de ambiente baseadas no exemplo:
+```bash
+cp .env.example .env
+```
+> **Nota:** Certifique-se de configurar sua `DATABASE_URL` (Neon) e `CLERK_JWKS_URL` dentro do `.env` recém-criado.
 
-### 4️⃣ Rode o front-end
+Inicie e rode o ambiente local:
+```bash
+uv sync                             # Instala dependências e cria o ambiente virtual
+uv run alembic upgrade head         # Prepara o schema no seu banco de dados
+uv run fastapi dev app/main.py      # Sobe o servidor FastAPI com live-reload
+```
+Acesse os contratos da API em tempo real (Swagger): [http://localhost:8000/docs](http://localhost:8000/docs)
 
+### 3. Configurar a Interface Web (Em Breve)
+Em outro terminal:
 ```bash
 cd apps/web
 npm install
 npm run dev
 ```
 
-> ✅ Front-end disponível em: `http://localhost:3000`
-
----
-
-## 🔐 Variáveis de Ambiente
-
-Copie os arquivos de exemplo e preencha com suas credenciais:
-
-```bash
-cp apps/api/.env.example apps/api/.env
-cp apps/web/.env.example apps/web/.env.local
-```
-
-Consulte o arquivo [`.env.example`](./.env.example) na raiz para ver todas as variáveis necessárias.
-
----
-
-## 🗺️ Roadmap
-
-### 🏗️ Fase 1 — Sistema Operacional
-
-- [x] Estrutura do monorepo configurada
-- [ ] Modelagem do banco de dados (PostgreSQL + Alembic)
-- [ ] API — Módulo de alunos
-- [ ] API — Módulo de planos e matrículas
-- [ ] API — Módulo de pagamentos
-- [ ] API — Módulo de presença
-- [ ] Autenticação JWT (Supabase Auth / Clerk)
-- [ ] Web — Layout base e autenticação
-- [ ] Web — CRUD de alunos
-- [ ] Web — Matrículas e pagamentos
-- [ ] Web — Check-in presencial
-- [ ] Deploy (Vercel + Cloud Run)
-
-### 📊 Fase 2 — Inteligência de Dados
-
-- [ ] Dashboard analítico com Metabase
-- [ ] Pipelines ETL com Prefect
-- [ ] Transformações SQL com dbt
-
-### 🤖 Fase 3 — IA & SaaS
-
-- [ ] Previsão de churn com Machine Learning
-- [ ] Assistente IA generativa para gestores
-- [ ] Multi-tenant com cobrança recorrente
-
----
-
-## 📄 Licença
-
-Distribuído sob a licença **MIT**. Veja o arquivo [LICENSE](./LICENSE) para mais detalhes.
-
 ---
 
 <div align="center">
-
-Feito com ☕ e 💪 — **FitCore** &copy; 2026
-
+  <p>Construído por engenheiros para elevar o padrão tecnológico do mercado fitness global.</p>
+  <p>&copy; 2026 FitCore OS. Distribuído sob a Licença MIT.</p>
 </div>
