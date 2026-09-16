@@ -1,6 +1,16 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+# ─────────────────────────────────────────────────────────────────────────────
+# SERVICE: Students (Alunos)
+#
+# IMPORTANTE — Multi-tenancy:
+# TODA query aqui filtra por organization_id.
+# Um usuário da Academia A NUNCA deve ver alunos da Academia B.
+# O organization_id sempre vem do token JWT do usuário autenticado,
+# nunca do corpo da requisição.
+# ─────────────────────────────────────────────────────────────────────────────
+
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 
 from app.models.student import Student
@@ -8,77 +18,115 @@ from app.schemas.student import StudentCreate, StudentUpdate
 
 
 class StudentService:
-    """Contém toda a lógica de negócio relacionada a Alunos.
+    """Lógica de negócio para o módulo de Alunos.
 
-    Separar a lógica do router é uma boa prática chamada de "Service Layer".
-    Vantagens:
-    - O router fica limpo: só recebe e devolve dados HTTP.
-    - A lógica pode ser reutilizada em outros contextos (ex: tarefas agendadas, seeds).
-    - Fica muito mais fácil escrever testes unitários para a lógica de negócio.
+    Todos os métodos recebem organization_id como parâmetro obrigatório.
+    Isso garante isolamento multi-tenant: dados de uma academia nunca
+    aparecem na listagem de outra.
     """
 
     @staticmethod
-    async def criar(db: AsyncSession, payload: StudentCreate) -> Student:
-        """Cria um novo aluno no banco de dados.
+    async def criar(
+        db: AsyncSession,
+        payload: StudentCreate,
+        organization_id: int,  # vem do JWT, não do body
+    ) -> Student:
+        """Cadastra um novo aluno na academia.
 
-        O Student(**payload.model_dump()) converte o schema Pydantic em um objeto
-        SQLAlchemy, que o banco de dados consegue entender e persistir.
+        O organization_id é injetado pelo endpoint a partir do token JWT.
+        O aluno sempre pertence à organização do usuário que o está criando.
+
+        Args:
+            db: Sessão assíncrona do banco de dados.
+            payload: Dados validados pelo schema StudentCreate.
+            organization_id: ID da organização (do usuário autenticado via JWT).
+
+        Returns:
+            O aluno recém-criado com id e timestamps preenchidos.
+
+        Raises:
+            409 Conflict: Se e-mail ou CPF já existirem no sistema.
         """
-        aluno = Student(**payload.model_dump())
+        aluno = Student(
+            **payload.model_dump(),
+            organization_id=organization_id,
+        )
         db.add(aluno)
         try:
             await db.commit()
-            # refresh() recarrega o objeto do banco para obter campos gerados
-            # automaticamente, como id e created_at.
             await db.refresh(aluno)
         except IntegrityError:
-            # IntegrityError ocorre quando violamos uma restrição do banco,
-            # como tentar cadastrar um e-mail que já existe (unique=True).
+            # Violação de UNIQUE constraint → email ou CPF duplicado.
             await db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Já existe um aluno com este e-mail.",
+                detail="Já existe um aluno com este e-mail ou CPF.",
             )
         return aluno
 
     @staticmethod
-    async def listar(db: AsyncSession) -> list[Student]:
-        """Retorna todos os alunos ativos, ordenados por nome.
+    async def listar(
+        db: AsyncSession,
+        organization_id: int,
+    ) -> list[Student]:
+        """Retorna todos os alunos ATIVOS de uma organização, ordenados por nome.
 
-        select(Student) monta a query SQL equivalente a:
-        SELECT * FROM students WHERE is_active = TRUE ORDER BY name
+        O filtro por organization_id é a linha de defesa principal do multi-tenancy.
+        Mesmo que alguém tente manipular a query, o filtro sempre está aqui.
+
+        Returns:
+            Lista de alunos ativos da organização.
         """
         resultado = await db.execute(
-            select(Student).where(Student.is_active == True).order_by(Student.name)
+            select(Student)
+            .where(
+                Student.organization_id == organization_id,
+                Student.is_active == True,
+            )
+            .order_by(Student.name)
         )
-        # scalars() extrai os objetos Python da resposta bruta do banco.
-        # all() transforma em lista.
-        return resultado.scalars().all()
+        return list(resultado.scalars().all())
 
     @staticmethod
-    async def buscar_por_id(db: AsyncSession, student_id: int) -> Student | None:
-        """Busca um aluno pelo ID.
+    async def buscar_por_id(
+        db: AsyncSession,
+        student_id: int,
+        organization_id: int,
+    ) -> Student | None:
+        """Busca um aluno pelo ID, garantindo que pertence à organização.
 
-        scalar_one_or_none() retorna o objeto se encontrado, ou None se não existir.
-        Nunca lança exceção por ausência de resultado.
+        Por que incluir organization_id?
+        Sem esse filtro, um usuário poderia adivinhar IDs de alunos de outras
+        academias e acessar dados sensíveis (nome, CPF, e-mail).
+
+        Returns:
+            O aluno se encontrado e pertencente à organização, None caso contrário.
         """
         resultado = await db.execute(
-            select(Student).where(Student.id == student_id)
+            select(Student).where(
+                Student.id == student_id,
+                Student.organization_id == organization_id,
+            )
         )
         return resultado.scalar_one_or_none()
 
     @staticmethod
     async def atualizar(
-        db: AsyncSession, student_id: int, payload: StudentUpdate
+        db: AsyncSession,
+        student_id: int,
+        organization_id: int,
+        payload: StudentUpdate,
     ) -> Student | None:
-        """Atualiza apenas os campos enviados pelo cliente (PATCH parcial).
+        """Atualiza parcialmente os dados de um aluno (PATCH).
 
-        exclude_unset=True é a chave do PATCH: retorna apenas os campos
-        que foram explicitamente enviados na requisição.
-        Exemplo: se o cliente manda {"phone": "99999-0000"}, apenas phone é atualizado.
-        Nome e e-mail permanecem intactos.
+        Apenas os campos enviados pelo cliente são alterados.
+        Exemplo: se o cliente manda só {"phone": "99999-0000"},
+        apenas o telefone é atualizado — nome, email e outros ficam intactos.
+
+        Returns:
+            O aluno atualizado, ou None se não encontrado.
         """
-        aluno = await StudentService.buscar_por_id(db, student_id)
+        aluno = await StudentService.buscar_por_id(db, student_id, organization_id)
         if not aluno:
             return None
 
@@ -91,17 +139,23 @@ class StudentService:
         return aluno
 
     @staticmethod
-    async def desativar(db: AsyncSession, student_id: int) -> bool:
+    async def desativar(
+        db: AsyncSession,
+        student_id: int,
+        organization_id: int,
+    ) -> bool:
         """Desativa um aluno (soft delete).
 
-        Não apagamos o registro do banco porque precisamos manter:
-        - Histórico de pagamentos vinculados ao aluno.
-        - Histórico de presenças.
-        - Relatórios de cancelamento e churn.
+        Por que não deletar?
+        Preservamos o histórico para:
+        - Relatórios de churn (cancelamentos)
+        - Histórico de pagamentos
+        - Histórico de presença
 
-        Alunos desativados têm is_active=False e não aparecem nas listagens normais.
+        Returns:
+            True se desativado com sucesso, False se não encontrado.
         """
-        aluno = await StudentService.buscar_por_id(db, student_id)
+        aluno = await StudentService.buscar_por_id(db, student_id, organization_id)
         if not aluno:
             return False
 

@@ -2,14 +2,23 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy.orm import declarative_base
 from app.core.config import settings
 
-# 1. O "Engine" (Motor) é o responsável por gerenciar a comunicação real com o banco de dados.
-# Ele cria e mantém as conexões nos bastidores usando a URL que configuramos no .env.
-# echo=True faz com que todos os comandos SQL gerados sejam impressos no terminal.
-# IMPORTANTE: O connect_args={"statement_cache_size": 0} é obrigatório ao usar o Connection Pooler do Supabase.
+# 1. O "Engine" (Motor) é o responsável por gerenciar a comunicação real com o banco.
+# Ele cria e mantém as conexões nos bastidores usando a URL configurada no .env.
+#
+# Sobre o nosso banco:
+#   → Banco de dados: Neon (PostgreSQL Serverless)
+#   → Auth provider: Clerk (separado — só cuida de login/tokens JWT)
+#
+# echo=True → imprime todos os comandos SQL no terminal (útil em desenvolvimento,
+#             desativar em produção para não logar dados sensíveis).
+#
+# connect_args={"statement_cache_size": 0}
+#   → OBRIGATÓRIO quando usamos connection pooling (como o do Neon via PgBouncer).
+#   → Sem isso, queries falhariam com erros crypticos usando asyncpg.
 engine = create_async_engine(
-    settings.DATABASE_URL, 
+    settings.DATABASE_URL,
     echo=True,
-    connect_args={"statement_cache_size": 0}
+    connect_args={"statement_cache_size": 0},
 )
 
 # 2. O "SessionLocal" é uma "fábrica" de sessões.
