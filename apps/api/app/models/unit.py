@@ -85,6 +85,15 @@ class Unit(TimestampMixin, Base):
         back_populates="units",
     )
 
+    # Usuários (recepcionistas, instrutores) alocados nesta unidade
+    users: Mapped[list["User"]] = relationship("User", back_populates="unit")
+
+    # Alunos alocados nesta unidade
+    students: Mapped[list["Student"]] = relationship("Student", back_populates="unit")
+
+    # Matrículas que ocorrem nesta unidade
+    memberships: Mapped[list["Membership"]] = relationship("Membership", back_populates="unit")
+
     # created_at e updated_at vêm do TimestampMixin. ✅
 
     def __repr__(self) -> str:

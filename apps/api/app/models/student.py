@@ -128,16 +128,23 @@ class Student(TimestampMixin, Base):
     # Regra: is_active=True quando status=ACTIVE, False nos demais.
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    # ── Relacionamentos ORM ───────────────────────────────────────────────────
-    # Acesso fácil à organização e unidade do aluno via Python.
-    # Exemplo: student.organization.name → "Academia Iron Body"
+    # ── Relacionamentos ───────────────────────────────────────────────────────
     organization: Mapped["Organization"] = relationship(
         "Organization",
+        back_populates="students",
         lazy="selectin",
     )
 
     unit: Mapped["Unit | None"] = relationship(
         "Unit",
+        back_populates="students",
+        lazy="selectin",
+    )
+
+    memberships: Mapped[list["Membership"]] = relationship(
+        "Membership",
+        back_populates="student",
+        cascade="all, delete-orphan",
         lazy="selectin",
     )
 

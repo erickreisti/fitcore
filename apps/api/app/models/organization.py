@@ -89,6 +89,30 @@ class Organization(TimestampMixin, Base):
     # lazy="selectin" → quando carregarmos uma organização, o SQLAlchemy
     # carrega automaticamente as unidades com uma query separada (mais eficiente
     # em modo async do que o lazy loading padrão).
+    users: Mapped[list["User"]] = relationship(
+        "User",
+        back_populates="organization",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    students: Mapped[list["Student"]] = relationship(
+        "Student",
+        back_populates="organization",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    plans: Mapped[list["Plan"]] = relationship(
+        "Plan",
+        back_populates="organization",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    memberships: Mapped[list["Membership"]] = relationship(
+        "Membership",
+        back_populates="organization",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
     units: Mapped[list["Unit"]] = relationship(
         "Unit",
         back_populates="organization",
