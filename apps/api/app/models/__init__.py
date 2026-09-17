@@ -17,6 +17,8 @@
 #   → Student depende de Organization e Unit     → importa por último (futuramente)
 # ─────────────────────────────────────────────────────────────────────────────
 
+from app.core.database import Base
+
 # Tabelas raiz (sem dependências)
 from app.models.organization import Organization
 
@@ -27,7 +29,25 @@ from app.models.unit import Unit
 from app.models.user import User, UserRole
 
 # Tabelas de alunos (dependem de Organization e Unit)
-from app.models.student import Student
+from app.models.student import Student, StudentStatus, Gender
+from app.models.plan import Plan
+from app.models.membership import Membership, MembershipStatus
+
+# Opcional, mas útil para exportar tudo quando alguém fizer:
+# from app.models import Base, User, Organization...
+__all__ = [
+    "Base",
+    "User",
+    "UserRole",
+    "Organization",
+    "Unit",
+    "Student",
+    "StudentStatus",
+    "Gender",
+    "Plan",
+    "Membership",
+    "MembershipStatus",
+]
 
 # Quando criarmos os demais models (User, Plan, Membership, Payment, Attendance),
 # adicionaremos os imports aqui na ordem correta.

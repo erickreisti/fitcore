@@ -16,7 +16,7 @@ from sqlalchemy import text
 
 from app.core.config import settings
 from app.core.database import SessionLocal
-from app.routers import students, organizations, units, users
+from app.routers import organizations, students, units, users, plans, memberships
 
 # ── Criação da Aplicação ──────────────────────────────────────────────────────
 # Os parâmetros abaixo aparecem na documentação automática em /docs e /redoc.
@@ -43,7 +43,11 @@ app = FastAPI(
 app.include_router(organizations.router, prefix="/api/v1")
 app.include_router(units.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
-app.include_router(students.router, prefix="/api/v1")
+app.include_router(students.router, prefix=f"{settings.API_V1_STR}/students", tags=["Alunos"])
+
+# Rotas Módulo Financeiro e Contratual
+app.include_router(plans.router, prefix=f"{settings.API_V1_STR}/plans", tags=["Planos"])
+app.include_router(memberships.router, prefix=f"{settings.API_V1_STR}/memberships", tags=["Matrículas"])
 
 
 # ── Health Checks ─────────────────────────────────────────────────────────────
